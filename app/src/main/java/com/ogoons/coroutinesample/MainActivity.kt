@@ -2,6 +2,8 @@ package com.ogoons.coroutinesample
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -25,7 +27,9 @@ class MainActivity : AppCompatActivity() {
         btnStart.setOnClickListener { startCount() }
         btnStop.setOnClickListener { stopCount() }
 
-        testLongRunningCoroutine()
+        startCoroutineBasics()
+//        startLongRunningCoroutine()
+//        startPausableCoroutine()
     }
 
     private var countJob: Job? = null
@@ -48,10 +52,17 @@ class MainActivity : AppCompatActivity() {
         countJob?.cancel()
     }
 
-    /**
-     * 메인 스레드에서 실행
-     */
-    fun testLongRunningCoroutine() = runBlocking<Unit> {
+    private fun startCoroutineBasics() = runBlocking { // start main coroutine
+        launch { // launch new coroutine in background and continue
+            delay(1000L)
+            println("World!")
+        }
+        print("Hello, ") // main coroutine continues here immediately
+        delay(2000L) // delaying for 2 seconds to keep JVM alive
+        println("Complete")
+    }
+
+    fun startLongRunningCoroutine() = runBlocking {
         val job = launch(Dispatchers.IO) {
             repeat(10) { i ->
                 println("I'm sleeping $i ...")
@@ -63,4 +74,40 @@ class MainActivity : AppCompatActivity() {
         job.join()
         println("Complete")
     }
+
+    private val dispatcher = PausableDispatcher(Handler(Looper.getMainLooper()))
+
+    private fun startPausableCoroutine() {
+        val job = GlobalScope.launch(dispatcher) {
+            if (this.isActive) {
+                suspendFunc()
+            }
+        }
+        GlobalScope.launch {
+            repeat(100) {
+                delay(300)
+                println("I'm working... count : $it")
+            }
+            println("Start Coroutine...")
+            delay(3000L)
+            dispatcher.pause()
+            println("Pause Coroutine...")
+            delay(3000L)
+            dispatcher.resume()
+            println("Resume Coroutine...")
+            delay(3000L)
+            job.cancelAndJoin()
+            println("Cancel Coroutine...")
+        }
+    }
+
+    private suspend fun suspendFunc() {
+        repeat(100) {
+            delay(300)
+            println("I'm working... count : $it")
+        }
+    }
+
+
+
 }
