@@ -1,16 +1,18 @@
 package com.ogoons.coroutinesample
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
+import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default
 
     private lateinit var tvCount: TextView
     private lateinit var btnStart: Button
@@ -24,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         btnStart = findViewById(R.id.btn_start)
         btnStop = findViewById(R.id.btn_stop)
 
-        btnStart.setOnClickListener { startCount() }
+        btnStart.setOnClickListener { countJob = startCount() }
         btnStop.setOnClickListener { stopCount() }
 
         startCoroutineBasics()
@@ -32,18 +34,23 @@ class MainActivity : AppCompatActivity() {
 //        startPausableCoroutine()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutineContext.cancelChildren()
+    }
+
     private var countJob: Job? = null
 
     private var timeCount: Int = 0
 
-    private fun startCount() {
-        tvCount.text = timeCount.toString()
-        countJob = GlobalScope.launch {
-            while (isActive) {
-                delay(1000)
-                runOnUiThread {
-                    tvCount.text = (++timeCount).toString()
-                }
+    private fun startCount() = launch {
+        withContext(Dispatchers.Main) {
+            tvCount.text = timeCount.toString()
+        }
+        while (isActive) {
+            delay(1000)
+            withContext(Dispatchers.Main) {
+                tvCount.text = (++timeCount).toString()
             }
         }
     }
@@ -107,7 +114,4 @@ class MainActivity : AppCompatActivity() {
             println("I'm working... count : $it")
         }
     }
-
-
-
 }
