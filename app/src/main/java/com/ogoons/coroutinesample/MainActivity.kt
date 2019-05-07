@@ -12,7 +12,7 @@ import kotlin.coroutines.CoroutineContext
 class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default
+        get() = Dispatchers.Default // Background Thread
 
     private lateinit var tvCount: TextView
     private lateinit var btnStart: Button
