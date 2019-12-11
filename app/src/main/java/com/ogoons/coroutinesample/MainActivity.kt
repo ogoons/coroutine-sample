@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import kotlinx.coroutines.*
@@ -29,7 +30,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         btnStart.setOnClickListener { countJob = startCount() }
         btnStop.setOnClickListener { stopCount() }
 
-        startCoroutineBasics()
+        startCoroutineBasics1()
+//        startCoroutineBasics2()
 //        startLongRunningCoroutine()
 //        startPausableCoroutine()
     }
@@ -57,9 +59,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     private fun stopCount() {
         countJob?.cancel()
+        timeCount = 0
+        tvCount.text = timeCount.toString()
     }
 
-    private fun startCoroutineBasics() = runBlocking { // start main coroutine
+    private fun startCoroutineBasics1() = runBlocking { // this expression blocks the main thread
         launch { // launch new coroutine in background and continue
             delay(1000L)
             println("World!")
@@ -69,9 +73,22 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         println("Complete")
     }
 
+    private fun startCoroutineBasics2() {
+        GlobalScope.launch { // launch new coroutine in background and continue
+            delay(1000L) // non-blocking delay for 1 second (default time unit is ms)
+            println("sequence 4") // print after delay
+        }
+        println("sequence 1")
+        runBlocking { // but this expression blocks the main thread
+            delay(4000L) // ... while we delay for 2 seconds to keep JVM alive
+            println("sequence 3")
+        }
+        println("sequence 2")
+    }
+
     fun startLongRunningCoroutine() = runBlocking {
         val job = launch(Dispatchers.IO) {
-            repeat(10) { i ->
+            repeat(10) { i -> // 10회 반복
                 println("I'm sleeping $i ...")
                 delay(500L)
             }
