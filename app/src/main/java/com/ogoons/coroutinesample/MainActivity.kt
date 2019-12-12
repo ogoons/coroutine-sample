@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import kotlinx.coroutines.*
@@ -13,7 +12,7 @@ import kotlin.coroutines.CoroutineContext
 class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default // Background Thread
+        get() = countJob!! + Dispatchers.Default // Background Thread
 
     private lateinit var tvCount: TextView
     private lateinit var btnStart: Button
@@ -27,18 +26,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         btnStart = findViewById(R.id.btn_start)
         btnStop = findViewById(R.id.btn_stop)
 
-        btnStart.setOnClickListener { countJob = startCount() }
-        btnStop.setOnClickListener { stopCount() }
+        btnStart.setOnClickListener {
+            stopCount()
+            countJob = startCount()
+        }
+        btnStop.setOnClickListener {
+            stopCount()
+        }
 
         startCoroutineBasics1()
 //        startCoroutineBasics2()
+//        startCoroutineBasics3()
 //        startLongRunningCoroutine()
+
 //        startPausableCoroutine()
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         coroutineContext.cancelChildren()
+        super.onDestroy()
     }
 
     private var countJob: Job? = null
@@ -63,39 +69,63 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         tvCount.text = timeCount.toString()
     }
 
-    private fun startCoroutineBasics1() = runBlocking { // this expression blocks the main thread
-        launch { // launch new coroutine in background and continue
+    /**
+     * launch example
+     */
+    private fun startCoroutineBasics1() = runBlocking {
+        // this expression blocks the main thread
+        launch {
+            // launch new coroutine in background and continue
             delay(1000L)
-            println("World!")
+            println("Coroutine World!")
         }
         print("Hello, ") // main coroutine continues here immediately
         delay(2000L) // delaying for 2 seconds to keep JVM alive
         println("Complete")
     }
 
+    /**
+     * launch & runBlocking example
+     */
     private fun startCoroutineBasics2() {
-        GlobalScope.launch { // launch new coroutine in background and continue
+        GlobalScope.launch {
+            // launch new coroutine in background and continue
             delay(1000L) // non-blocking delay for 1 second (default time unit is ms)
             println("sequence 4") // print after delay
         }
         println("sequence 1")
-        runBlocking { // but this expression blocks the main thread
+        runBlocking {
+            // but this expression blocks the main thread
             delay(4000L) // ... while we delay for 2 seconds to keep JVM alive
             println("sequence 3")
         }
         println("sequence 2")
     }
 
+    /**
+     * Join example
+     */
+    private fun startCoroutineBasics3() = runBlocking {
+        val job = GlobalScope.launch {
+            // launch new coroutine and keep a reference to its Job
+            delay(1000L)
+            println("World!")
+        }
+        println("Hello,")
+        job.join() // wait until child coroutine completes
+        println("AD1")
+    }
+
     fun startLongRunningCoroutine() = runBlocking {
         val job = launch(Dispatchers.IO) {
-            repeat(10) { i -> // 10회 반복
+            repeat(10) { i ->
                 println("I'm sleeping $i ...")
                 delay(500L)
             }
         }
         delay(1300L) // just quit after delay
         println("Not yet")
-        job.join()
+        job.join() // 이 블록에서부터 메인스레드를 block 하고 job이 완료되길 기다린다.
         println("Complete")
     }
 
