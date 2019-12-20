@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             delay(1000L)
             println("World!")
         }
-        println("Hello,")
+        print("Hello, ")
         job.join() // wait until child coroutine completes
         println("AD1")
     }
